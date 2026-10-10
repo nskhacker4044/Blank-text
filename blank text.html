@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blank Space Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Main card */
+        .card {
+            background: #f9f9f9;
+            width: 100%;
+            max-width: 480px;
+            border-radius: 28px;
+            padding: 40px 32px 36px;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.04);
+            border: 1px solid #eee;
+            text-align: center;
+        }
+
+        /* Title */
+        .card h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #111;
+            margin-bottom: 20px;
+            letter-spacing: -0.5px;
+        }
+
+        /* Description text */
+        .description {
+            font-size: 17px;
+            line-height: 1.6;
+            color: #222;
+            margin-bottom: 32px;
+            text-align: left;
+            font-weight: 400;
+            letter-spacing: -0.2px;
+        }
+
+        /* Counter control: [ - ] [ 1 ] [ + ] */
+        .counter {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .counter button {
+            background: #000;
+            color: #fff;
+            border: none;
+            font-size: 22px;
+            font-weight: 500;
+            width: 60px;
+            height: 56px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .counter button:hover {
+            background: #222;
+        }
+
+        .counter button:active {
+            background: #333;
+        }
+
+        .counter button.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .counter button.disabled:hover {
+            background: #000;
+        }
+
+        .counter .value {
+            background: #fff;
+            color: #000;
+            font-size: 20px;
+            font-weight: 600;
+            width: 72px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-left: 1px solid #e0e0e0;
+            border-right: 1px solid #e0e0e0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Output display box - AUTO HEIGHT, saari spaces dikhengi */
+        .output-box {
+            background: #eef4fa;
+            border: 1.5px solid #1a1a1a;
+            border-radius: 14px;
+            padding: 14px 16px;
+            margin-bottom: 24px;
+            min-height: 58px;
+            /* max-height aur overflow hata diya - ab auto grow karega */
+            overflow: visible;
+            position: relative;
+            cursor: text;
+            transition: height 0.15s ease;
+        }
+
+        /* Spaces container - starts from LEFT */
+        .output-box .spaces-content {
+            display: block;
+            text-align: left;
+            line-height: 0;
+            font-size: 0;
+            word-break: break-all;
+        }
+
+        /* Each visible space block */
+        .space-visible {
+            display: inline-block;
+            width: 7px;
+            height: 22px;
+            background: #b8d4ea;
+            border: 0.5px solid #9cc0dd;
+            border-radius: 1.5px;
+            margin: 1px 2px 1px 0;
+            box-sizing: border-box;
+            vertical-align: middle;
+        }
+
+        /* "+N" indicator */
+        .more-indicator {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 700;
+            color: #fff;
+            background: #4a90d9;
+            padding: 3px 10px;
+            border-radius: 10px;
+            margin: 2px;
+            vertical-align: middle;
+            line-height: 1.4;
+            white-space: nowrap;
+            box-shadow: 0 1px 3px rgba(74, 144, 217, 0.3);
+        }
+
+        /* Copy button */
+        .copy-btn {
+            background: #000;
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            padding: 16px 40px;
+            font-size: 19px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+            width: 100%;
+            max-width: 260px;
+            letter-spacing: 0.2px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .copy-btn:hover {
+            background: #1a1a1a;
+        }
+
+        .copy-btn:active {
+            transform: scale(0.98);
+            background: #333;
+        }
+
+        .copy-btn.copied {
+            background: #1a7f4b;
+        }
+
+        /* Small feedback text under button */
+        .feedback {
+            font-size: 13px;
+            color: #777;
+            margin-top: 10px;
+            height: 18px;
+            transition: opacity 0.2s;
+        }
+
+        .feedback.show {
+            color: #1a7f4b;
+            font-weight: 500;
+        }
+
+        /* Responsive */
+        @media (max-width: 520px) {
+            .card {
+                padding: 28px 20px 24px;
+                border-radius: 22px;
+            }
+            .card h1 {
+                font-size: 26px;
+                margin-bottom: 16px;
+            }
+            .description {
+                font-size: 15px;
+                margin-bottom: 24px;
+            }
+            .counter button {
+                width: 52px;
+                height: 50px;
+                font-size: 20px;
+            }
+            .counter .value {
+                width: 64px;
+                height: 50px;
+                font-size: 18px;
+            }
+            .output-box {
+                min-height: 50px;
+                padding: 12px 14px;
+            }
+            .space-visible {
+                width: 6px;
+                height: 18px;
+            }
+            .copy-btn {
+                padding: 14px 32px;
+                font-size: 17px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <!-- Title -->
+        <h1>𝗕𝗟𝗔𝗡𝗞 𝗧𝗘𝗫𝗧</h1>
+
+        <!-- Description -->
+        <p class="description">
+            Generate unlimited empty characters by entering the number of blank spaces you need, then click the "Copy" button and paste them where you want.
+        </p>
+
+        <!-- Counter -->
+        <div class="counter">
+            <button id="decrementBtn" aria-label="Decrease spaces">−</button>
+            <div class="value" id="counterValue">1</div>
+            <button id="incrementBtn" aria-label="Increase spaces">+</button>
+        </div>
+
+        <!-- Output display -->
+        <div class="output-box" id="outputBox">
+            <div class="spaces-content" id="spacesContent"></div>
+        </div>
+
+        <!-- Copy button -->
+        <button class="copy-btn" id="copyBtn">Copy</button>
+        <div class="feedback" id="feedback"></div>
+    </div>
+
+    <script>
+        (function() {
+            const decrementBtn = document.getElementById('decrementBtn');
+            const incrementBtn = document.getElementById('incrementBtn');
+            const counterValue = document.getElementById('counterValue');
+            const outputBox = document.getElementById('outputBox');
+            const spacesContent = document.getElementById('spacesContent');
+            const copyBtn = document.getElementById('copyBtn');
+            const feedback = document.getElementById('feedback');
+
+            let count = 1;
+            let currentSpaces = '';
+
+            const MAX_SPACES = 100000;
+            const MIN_SPACES = 1;
+            const VISUAL_LIMIT = 1000; // ab 1000 blocks tak dikha sakte hain (auto height)
+
+            // --- Auto-repeat ---
+            const HOLD_DELAY_MS = 400;
+            const REPEAT_INTERVAL_MS = 60;
+            let holdTimer = null;
+            let repeatTimer = null;
+            let holdDirection = null;
+
+            function updateUI() {
+                counterValue.textContent = count;
+
+                currentSpaces = ' '.repeat(count);
+
+                const fragment = document.createDocumentFragment();
+                const visualCount = Math.min(count, VISUAL_LIMIT);
+
+                for (let i = 0; i < visualCount; i++) {
+                    const span = document.createElement('span');
+                    span.className = 'space-visible';
+                    fragment.appendChild(span);
+                }
+
+                if (count > VISUAL_LIMIT) {
+                    const indicator = document.createElement('span');
+                    indicator.className = 'more-indicator';
+                    indicator.textContent = '+' + (count - VISUAL_LIMIT);
+                    fragment.appendChild(indicator);
+                }
+
+                spacesContent.innerHTML = '';
+                spacesContent.appendChild(fragment);
+
+                updateButtonStates();
+
+                outputBox.title = `${count} space${count > 1 ? 's' : ''}`;
+            }
+
+            function updateButtonStates() {
+                if (count <= MIN_SPACES) {
+                    decrementBtn.classList.add('disabled');
+                } else {
+                    decrementBtn.classList.remove('disabled');
+                }
+                if (count >= MAX_SPACES) {
+                    incrementBtn.classList.add('disabled');
+                } else {
+                    incrementBtn.classList.remove('disabled');
+                }
+            }
+
+            function increment() {
+                if (count < MAX_SPACES) {
+                    count++;
+                    updateUI();
+                    return true;
+                }
+                return false;
+            }
+
+            function decrement() {
+                if (count > MIN_SPACES) {
+                    count--;
+                    updateUI();
+                    return true;
+                }
+                return false;
+            }
+
+            // --- Auto-repeat ---
+            function startHold(direction) {
+                stopHold();
+                holdDirection = direction;
+
+                holdTimer = setTimeout(() => {
+                    repeatTimer = setInterval(() => {
+                        let keepGoing = false;
+                        if (holdDirection === 'inc') {
+                            keepGoing = increment();
+                        } else if (holdDirection === 'dec') {
+                            keepGoing = decrement();
+                        }
+                        if (!keepGoing) {
+                            stopHold();
+                        }
+                    }, REPEAT_INTERVAL_MS);
+                }, HOLD_DELAY_MS);
+            }
+
+            function stopHold() {
+                if (holdTimer) {
+                    clearTimeout(holdTimer);
+                    holdTimer = null;
+                }
+                if (repeatTimer) {
+                    clearInterval(repeatTimer);
+                    repeatTimer = null;
+                }
+                holdDirection = null;
+            }
+
+            function showFeedback(message, isSuccess = true) {
+                feedback.textContent = message;
+                feedback.classList.add('show');
+                feedback.style.color = isSuccess ? '#1a7f4b' : '#c0392b';
+                if (window.feedbackTimer) clearTimeout(window.feedbackTimer);
+                window.feedbackTimer = setTimeout(() => {
+                    feedback.classList.remove('show');
+                    feedback.textContent = '';
+                    feedback.style.color = '#777';
+                }, 1800);
+            }
+
+            async function copyToClipboard() {
+                if (count < 1) {
+                    showFeedback('Please add at least 1 space', false);
+                    return;
+                }
+
+                currentSpaces = ' '.repeat(count);
+
+                try {
+                    await navigator.clipboard.writeText(currentSpaces);
+                    showFeedback('Copied!', true);
+                    copyBtn.classList.add('copied');
+                    copyBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyBtn.classList.remove('copied');
+                        copyBtn.textContent = 'Copy';
+                    }, 1200);
+                } catch (err) {
+                    try {
+                        const textarea = document.createElement('textarea');
+                        textarea.value = currentSpaces;
+                        textarea.style.position = 'fixed';
+                        textarea.style.opacity = '0';
+                        textarea.style.left = '-9999px';
+                        textarea.style.top = '0';
+                        document.body.appendChild(textarea);
+                        textarea.focus();
+                        textarea.select();
+                        const success = document.execCommand('copy');
+                        document.body.removeChild(textarea);
+                        if (success) {
+                            showFeedback('Copied!', true);
+                            copyBtn.classList.add('copied');
+                            copyBtn.textContent = 'Copied!';
+                            setTimeout(() => {
+                                copyBtn.classList.remove('copied');
+                                copyBtn.textContent = 'Copy';
+                            }, 1200);
+                        } else {
+                            showFeedback('Copy failed. Please manually select.', false);
+                        }
+                    } catch (fallbackErr) {
+                        showFeedback('Copy failed. Please manually select.', false);
+                    }
+                }
+            }
+
+            // --- Hold behavior ---
+            function attachHoldBehavior(button, direction) {
+                button.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    if (direction === 'inc') increment();
+                    else decrement();
+                    startHold(direction);
+                });
+
+                button.addEventListener('mouseup', stopHold);
+                button.addEventListener('mouseleave', stopHold);
+
+                button.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    if (direction === 'inc') increment();
+                    else decrement();
+                    startHold(direction);
+                }, { passive: false });
+
+                button.addEventListener('touchend', stopHold);
+                button.addEventListener('touchcancel', stopHold);
+
+                button.addEventListener('keydown', (e) => {
+                    if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) {
+                        e.preventDefault();
+                        if (direction === 'inc') increment();
+                        else decrement();
+                        startHold(direction);
+                    }
+                });
+
+                button.addEventListener('keyup', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        stopHold();
+                    }
+                });
+
+                button.addEventListener('click', (e) => e.preventDefault());
+            }
+
+            attachHoldBehavior(incrementBtn, 'inc');
+            attachHoldBehavior(decrementBtn, 'dec');
+
+            copyBtn.addEventListener('click', copyToClipboard);
+            window.addEventListener('blur', stopHold);
+
+            // --- Init ---
+            (function init() {
+                count = 1;
+                updateUI();
+                feedback.textContent = '';
+                feedback.classList.remove('show');
+            })();
+
+        })();
+    </script>
+</body>
+</html>
